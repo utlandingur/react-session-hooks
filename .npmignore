@@ -1,0 +1,19 @@
+# Ignore the source files
+src/
+# Ignore build files if you want to include only the dist
+!dist/
+dist/tsconfig.tsbuildinfo
+
+# Ignore configuration files
+*.config.js
+*.config.ts
+*.json
+# Ignore the package lock
+package-lock.json
+# Ignore the node_modules directory
+node_modules/
+# Ignore git files
+.gitattributes
+.gitignore
+# Ignore any .tgz files accidentially left in the root
+*.tgz
