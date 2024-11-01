@@ -1,4 +1,4 @@
-# react-use-persistent-state
+# react-session-hooks
 
 A lightweight React library providing custom hooks for managing state synchronized with `localStorage` and `sessionStorage` that works with Server Side Rendering frameworks.
 
@@ -22,13 +22,13 @@ A lightweight React library providing custom hooks for managing state synchroniz
 To install the library, use npm or yarn:
 
 ```bash
-npm install react-use-persistent-state
+npm install react-session-hooks
 ```
 
 or
 
 ```bash
-yarn add react-use-persistent-state
+yarn add react-session-hooks
 ```
 
 Ensure you also have React as a peer dependency:
@@ -48,7 +48,7 @@ The `useLocalState` hook allows you to manage state that persists across page re
 - It will remove the item from storage if the value is set to `undefined`, `null`, or `""`.
 
 ```javascript
-import { useLocalState } from "react-use-persistent-state";
+import { useLocalState } from "react-session-hooks";
 
 const MyComponent = () => {
   const [value, setValue, loading] = useLocalState("myKey", "default");
@@ -73,7 +73,7 @@ The `useSessionState` hook allows you to manage state that persists only within 
 - It will remove the item from storage if the value is set to `undefined`, `null`, or `""`.
 
 ```javascript
-import { useSessionState } from "react-use-persistent-state";
+import { useSessionState } from "react-session-hooks";
 
 const MyComponent = () => {
   const [value, setValue, loading] = useSessionState("myKey", "default");
@@ -146,7 +146,7 @@ const [storedValue, setStoredValue, loading] = useSessionState<T>(
 Here’s a simple example of using useLocalState to manage a user’s preferred language setting:
 
 ```javascript
-import { useLocalState } from "react-use-persistent-state;
+import { useLocalState } from "react-session-hooks;
 
 const LanguageSelector = () => {
   const [language, setLanguage, loading] = useLocalState(

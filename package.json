@@ -1,8 +1,9 @@
 {
-  "name": "react-use-persistent-state",
-  "version": "0.1.0",
+  "name": "react-session-hooks",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "description": "Easily synchronize your React state with session storage using type-safe hooks.",
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
