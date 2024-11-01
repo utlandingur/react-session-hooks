@@ -4,7 +4,8 @@
     "type": "git",
     "url": "https://github.com/utlandingur/react-local-storage-hooks"
   },
-  "version": "1.0.2",
+  "version": "1.0.4",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "description": "Easily synchronize your React state with session storage using type-safe hooks.",
@@ -34,6 +35,6 @@
     "typescript": "^5"
   },
   "peerDependencies": {
-    "react": "^16.0.0"
+    "react": "^18.0.0"
   }
 }
