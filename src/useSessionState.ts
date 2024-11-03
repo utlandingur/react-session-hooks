@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-
+import { useCallback, useEffect, useState } from "react";
+import { updateStorage, calculateNewValue, setInitialValue } from "./utils";
 /**
  * Hook to manage state synchronized with session storage.
  *
@@ -26,64 +26,32 @@ export function useSessionState<T>(
   (value: T | null | ((prev: T | null) => T | null)) => void,
   boolean
 ] {
-  const [storedValue, setStoredValue] = useState<T | null>(null);
+  const [value, setvalue] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Attempt to set the initial state from sessionStorage using the provided key.
+  // If an existing value is found, it will be deserialized and set as the initial state.
   useEffect(() => {
-    const setInitialValue = (): boolean => {
-      const item = sessionStorage.getItem(key);
-      if (item) {
-        try {
-          setStoredValue(deserialize(item));
-          return true;
-        } catch (error) {
-          console.warn(`Error parsing sessionStorage key "${key}":`, error);
-          sessionStorage.removeItem(key); // Clean up invalid data
-        }
-      }
-
-      if (defaultValue !== undefined) {
-        try {
-          sessionStorage.setItem(key, serialize(defaultValue));
-          setStoredValue(defaultValue);
-          return true;
-        } catch (error) {
-          console.warn("Default value cannot be serialized. Setting to null.");
-        }
-      }
-      setStoredValue(null);
-      return true;
-    };
-
-    const isValueSet = setInitialValue();
+    const isValueSet = setInitialValue(
+      sessionStorage,
+      key,
+      defaultValue,
+      setvalue,
+      deserialize,
+      serialize
+    );
     setLoading(!isValueSet);
-  }, []);
+  }, [key, defaultValue, deserialize, serialize]);
 
-  const updateValue = (value: T | ((prev: T | null) => T | null) | null) => {
-    // calculate new value
-    let newValue: T | null | ((prev: T | null) => T | null);
-    if (typeof value === "function") {
-      const callback = value as (prev: T | null) => T | null;
-      newValue = callback(storedValue);
-    } else if (!value) newValue = null;
-    else newValue = value;
+  const updateValue = useCallback(
+    (newValue: T | ((prev: T | null) => T | null) | null) => {
+      // Function to update the local state and sessionStorage.
+      // Accepts a new value or a function that computes the new value based on the previous state.
+      const calculatedValue = calculateNewValue(newValue, value);
+      updateStorage(sessionStorage, calculatedValue, key, setvalue, serialize);
+    },
+    [key, value, serialize]
+  );
 
-    // update session storage
-    if (newValue === null || newValue == undefined || newValue === "") {
-      sessionStorage.removeItem(key);
-      setStoredValue(null);
-    } else {
-      try {
-        sessionStorage.setItem(key, serialize(newValue as T));
-        setStoredValue(newValue);
-      } catch (error) {
-        console.warn(
-          `Aborting state update for "${key}": unable to serialise new value:`,
-          error
-        );
-      }
-    }
-  };
-
-  return [storedValue, updateValue, loading];
+  return [value, updateValue, loading];
 }

@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { calculateNewValue, setInitialValue, updateStorage } from "./utils";
 
 /**
  * Hook to manage state synchronized with localStorage across multiple tabs.
@@ -9,7 +10,7 @@ import { useEffect, useState } from "react";
  * @param {T} [defaultValue] - The default value to use if no value is found in localStorage.
  * @param {(value: T) => string} [serialize] - Optional custom serialization function.
  * @param {(value: string) => T} [deserialize] - Optional custom deserialization function.
- * @returns {[T | null, Dispatch<SetStateAction<T | null>>]} A stateful value, a function to update it and a loading state.
+ * @returns {[T | null, (value: T | null | ((prev: T | null) => T | null)) => void, boolean]} A stateful value, a function to update it, and a loading state.
  *
  * @example
  * const [value, setValue, loadingValue] = useLocalState<string>("myKey", "default");
@@ -26,72 +27,28 @@ export function useLocalState<T>(
   (value: T | null | ((prev: T | null) => T | null)) => void,
   boolean
 ] {
-  const item = localStorage.getItem(key);
-  const [storedValue, setStoredValue] = useState<T | null>(null);
+  const [value, setvalue] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const setInitialValue = () => {
-      const item = localStorage.getItem(key);
-      if (item) {
-        try {
-          setStoredValue(deserialize(item));
-          return true;
-        } catch (error) {
-          console.warn(`Error parsing localStorage key "${key}":`, error);
-          localStorage.removeItem(key); // Clean up invalid data
-        }
-      }
-
-      if (defaultValue !== undefined) {
-        try {
-          localStorage.setItem(key, serialize(defaultValue));
-          setStoredValue(defaultValue);
-          return true;
-        } catch (error) {
-          console.warn("Default value cannot be serialized. Setting to null.");
-        }
-      }
-      setStoredValue(null);
-      return true;
-    };
-
-    const isValueSet = setInitialValue();
+    // Attempt to set the initial state from localStorage using the provided key.
+    // If an existing value is found, it will be deserialized and set as the initial state.
+    const isValueSet = setInitialValue(
+      localStorage,
+      key,
+      defaultValue,
+      setvalue,
+      deserialize,
+      serialize
+    );
     setLoading(!isValueSet);
-  }, []);
 
-  const updateValue = (value: T | ((prev: T | null) => T | null) | null) => {
-    // calculate new value
-    let newValue: T | null | ((prev: T | null) => T | null);
-    if (typeof value === "function") {
-      const callback = value as (prev: T | null) => T | null;
-      newValue = callback(storedValue);
-    } else if (!value) newValue = null;
-    else newValue = value;
-
-    // update session storage
-    if (newValue === null || newValue == undefined || newValue === "") {
-      localStorage.removeItem(key);
-      setStoredValue(null);
-    } else {
-      try {
-        localStorage.setItem(key, serialize(newValue as T));
-        setStoredValue(newValue);
-      } catch (error) {
-        console.warn(
-          `Aborting state update for "${key}": unable to serialise new value:`,
-          error
-        );
-      }
-    }
-  };
-
-  // Listen for changes in other tabs
-  useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
+      // Event handler that is triggered when changes are made to localStorage in other tabs.
+      // It updates the value state based on the new value from the event.
       if (event.key === key) {
         try {
-          setStoredValue(event.newValue ? deserialize(event.newValue) : null);
+          setvalue(event.newValue ? deserialize(event.newValue) : null);
         } catch (error) {
           console.warn(
             `Aborting automatic state update for "${key}": unable to serialise new value`,
@@ -101,11 +58,22 @@ export function useLocalState<T>(
       }
     };
 
+    // Listen for changes in other tabs
     window.addEventListener("storage", handleStorageChange);
     return () => {
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, []);
+  }, [key, defaultValue, deserialize, serialize]);
 
-  return [storedValue, updateValue, loading];
+  const updateValue = useCallback(
+    (newValue: T | ((prev: T | null) => T | null) | null) => {
+      // Function to update the local state and localStorage.
+      // Accepts a new value or a function that computes the new value based on the previous state.
+      const calculatedValue = calculateNewValue(newValue, value);
+      updateStorage(localStorage, calculatedValue, key, setvalue, serialize);
+    },
+    [key, value, serialize]
+  );
+
+  return [value, updateValue, loading];
 }

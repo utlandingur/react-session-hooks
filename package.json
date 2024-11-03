@@ -2,9 +2,9 @@
   "name": "react-session-hooks",
   "repository": {
     "type": "git",
-    "url": "https://github.com/utlandingur/react-local-storage-hooks"
+    "url": "https://github.com/utlandingur/react-session-hooks"
   },
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
